@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PUSHKARA MATHA CONVERT COMMITTEE</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        :root { --primary: #4b0430; --bg: #f4f4f9; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); padding: 20px; }
+        .card { max-width: 900px; margin: auto; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        
+        .search-box { width: 100%; padding: 12px; margin: 20px 0; border: 2px solid #ddd; border-radius: 8px; }
+        .table-container { max-height: 400px; overflow-y: auto; margin-bottom: 20px; border: 1px solid #eee; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th { background: var(--primary); color: white; position: sticky; top: 0; padding: 12px; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        
+        input[type="number"] { width: 70px; padding: 5px; border-radius: 4px; border: 1px solid #ccc; }
+        
+        .summary-bar { background: #e8f5e9; padding: 20px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .total-text { font-size: 1.8rem; font-weight: bold; color: var(--primary); }
+        
+        .btn-group { display: flex; gap: 10px; }
+        button { border: none; padding: 12px 25px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        .btn-pay { background: var(--primary); color: white; }
+        .btn-pdf { background: #f80101; color: white; display: none; }
+
+        /* PDF Styles - Professional Look */
+        #bill-pdf { display: none; padding: 30px; font-family: 'Courier', monospace; }
+        .pdf-header { text-align: center; border-bottom: 2px solid #000; margin-bottom: 20px; }
+        .pdf-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .pdf-table th, .pdf-table td { border-bottom: 1px dashed #000; padding: 8px; text-align: left; }
+        .pdf-footer { margin-top: 30px; text-align: right; font-size: 1.2rem; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1 style="text-align:center; color: rgb(212, 181, 5);">PUSHKARA MATHA CONVERT COMMITTEE</h1>
+    <h2 style="text-align:center; color: #02660a;">IRCA AND OLDAGE HOME</h2>
+    <h3 style="text-align:center; color: #000;">Vegetable Bill</h3>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Vegetable</th>
+                    <th>Price/kg</th>
+                    <th>Qty (kg)</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody id="veg-body"></tbody>
+        </table>
+    </div>
+
+    <div class="summary-bar">
+        <div class="total-text">Grand Total: ₹<span id="grand-total">0.00</span></div>
+        <div class="btn-group">
+            <button class="btn-pay" onclick="makeBill()">Create Bill</button>
+            <button class="btn-pdf" id="pdf-btn" onclick="downloadPDF()">Download PDF</button>
+        </div>
+    </div>
+</div>
+
+<div id="bill-pdf">
+    <div class="pdf-header">
+        <h1>PUSHKARA MATHA CONVERT COMMITTEE</h1>
+        <p>VEGATABLE BILL'S </p>
+        <p>IRCA AND OLDAGE HOME</p>
+        <p id="pdf-date"></p>
+        <p>Bill No: <span id="bill-no"></span></p>
+    </div>
+    
+    <table class="pdf-table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Price</th>
+                <th>Qty</th>
+                <th>Amount</th>
+            </tr>
+        </thead>
+        <tbody id="pdf-items"></tbody>
+    </table>
+
+    <div class="pdf-footer">
+        <p>--------------------------</p>
+        <h3>TOTAL AMOUNT: ₹<span id="pdf-total"></span></h3>
+        <p>--------------------------</p>
+        <p style="text-align:center; font-size: 0.8rem;">Thank you! Visit Again.</p>
+    </div>
+</div>
+
+<script>
+    const vegetables = [
+        "దొండకాయలు", "బెండకాయల", "పచ్చిమిర్చి", "అరటికాయలు", "క్యాబేజీ", "దోసకాయలు", "ఆనంకాయ", "నిమ్మకాయలు", 
+        "కొత్తిమీర", "తోటకూర", "గోంగూర", "పుదీనా", "అల్లం", "బంగాళదుంపలు","Pertol","Chicken","Fish"
+    ];
+
+    const tbody = document.getElementById('veg-body');
+    
+    // Generate Rows
+    vegetables.forEach((veg, i) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td><strong>${veg}</strong></td>
+            <td>₹<input type="number" class="p-in" value="" oninput="calc()"></td>
+            <td><input type="number" class="q-in" value="" min="0" step="0.1" oninput="calc()"></td>
+            <td class="row-total">₹</td>
+        `;
+        tbody.appendChild(row);
+    });
+
+    function calc() {
+        let grand = 0;
+        document.querySelectorAll('#veg-body tr').forEach(row => {
+            const p = parseFloat(row.querySelector('.p-in').value) || 0;
+            const q = parseFloat(row.querySelector('.q-in').value) || 0;
+            const sub = p * q;
+            row.querySelector('.row-total').innerText = `₹${sub.toFixed(2)}`;
+            grand += sub;
+        });
+        document.getElementById('grand-total').innerText = grand.toFixed(2);
+    }
+
+    function filterVeg() {
+        const val = document.getElementById('search').value.toLowerCase();
+        document.querySelectorAll('#veg-body tr').forEach(row => {
+            const text = row.cells[0].innerText.toLowerCase();
+            row.style.display = text.includes(val) ? "" : "none";
+        });
+    }
+
+    function makeBill() {
+        const total = document.getElementById('grand-total').innerText;
+        if(parseFloat(total) === 0) return alert("Please select quantities!");
+
+        document.getElementById('pdf-date').innerText = "Date: " + new Date().toLocaleString();
+        document.getElementById('bill-no').innerText = Math.floor(Math.random() * 10000);
+        document.getElementById('pdf-total').innerText = total;
+
+        let itemsHtml = "";
+        document.querySelectorAll('#veg-body tr').forEach(row => {
+            const q = row.querySelector('.q-in').value;
+            if(q > 0) {
+                const name = row.cells[0].innerText;
+                const p = row.querySelector('.p-in').value;
+                const sub = row.querySelector('.row-total').innerText;
+                itemsHtml += `<tr><td>${name}</td><td>₹${p}</td><td>${q}kg</td><td>${sub}</td></tr>`;
+            }
+        });
+
+        document.getElementById('pdf-items').innerHTML = itemsHtml;
+        document.getElementById('pdf-btn').style.display = "block";
+        alert("Bill generated for ₹" + total);
+    }
+
+    function downloadPDF() {
+        const element = document.getElementById('bill-pdf');
+        element.style.display = 'block';
+        html2pdf().from(element).set({
+            margin: 10,
+            filename: 'Vegetable Bill',
+            jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        }).save().then(() => {
+            element.style.display = 'none';
+        });
+    }
+</script>
+</body>
+</html>
